@@ -147,7 +147,7 @@ class JarvisVisionEngine:
                     continue
                     
                 frame = cv2.flip(frame, 1)  # 좌우 반전
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR_GRAY)
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 gray_blurred = cv2.GaussianBlur(gray, (21, 21), 0)
                 
                 now = time.time()
