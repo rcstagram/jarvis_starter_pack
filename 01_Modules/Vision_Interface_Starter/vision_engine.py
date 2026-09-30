@@ -31,9 +31,12 @@ class JarvisVisionEngine:
         self.user_present = False
         self.last_presence_change = 0
         self.gesture_cooldown = 0
+        self.is_running = False
         
     def start_camera(self):
         """웹캠 카메라 스트림 초기화"""
+        if self.cap is not None and self.cap.isOpened():
+            return True
         self.cap = cv2.VideoCapture(self.camera_index)
         if not self.cap.isOpened():
             print(f"[Vision Engine Error] Cannot open camera device {self.camera_index}", file=sys.stderr)
@@ -43,10 +46,19 @@ class JarvisVisionEngine:
 
     def stop_camera(self):
         """웹캠 카메라 닫기"""
-        if self.cap and self.cap.isOpened():
-            self.cap.release()
+        if self.cap is not None:
+            try:
+                self.cap.release()
+            except Exception:
+                pass
+            self.cap = None
         cv2.destroyAllWindows()
         print("[Vision Engine] Camera closed.")
+
+    def stop_detection(self):
+        """비전 감지 루프 중지"""
+        self.is_running = False
+        self.stop_camera()
 
     def detect_face_presence(self, frame_gray):
         """얼굴 탐지 및 움직임을 통한 사용자 착석/부재 판정"""
@@ -125,9 +137,10 @@ class JarvisVisionEngine:
             return
             
         print("[Vision Engine] 🎥 실시간 웹캠 감지 루프 가동 중...")
+        self.is_running = True
         
         try:
-            while self.cap.isOpened():
+            while self.is_running and self.cap and self.cap.isOpened():
                 ret, frame = self.cap.read()
                 if not ret:
                     time.sleep(0.1)

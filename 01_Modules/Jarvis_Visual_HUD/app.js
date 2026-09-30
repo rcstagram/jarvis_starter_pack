@@ -6,6 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initAudioSpectrum();
     initControls();
     initRealtimeAutoSync();
+
+    // Default ON: Automatically start camera when app loads
+    setTimeout(() => {
+        if (window.toggleWebcam) {
+            window.toggleWebcam(true);
+        }
+    }, 600);
 });
 
 let webcamStream = null;
@@ -23,7 +30,12 @@ function initClock() {
 }
 
 // 2. Complete Hardware Camera Release Toggle Controller
-async function toggleWebcam() {
+async function toggleWebcam(forceState) {
+    if (forceState !== undefined && forceState === isCameraActive) {
+        return;
+    }
+    const shouldActivate = (forceState !== undefined) ? forceState : !isCameraActive;
+
     const video = document.getElementById('webcam-video');
     const camStatus = document.getElementById('camera-status');
     const overlay = document.getElementById('video-privacy-overlay');
@@ -32,7 +44,7 @@ async function toggleWebcam() {
     const presenceVal = document.getElementById('presence-value');
     const fpsTag = document.getElementById('fps-tag');
 
-    if (!isCameraActive) {
+    if (shouldActivate) {
         // TURN CAMERA ON
         try {
             webcamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
@@ -56,8 +68,9 @@ async function toggleWebcam() {
             btnToggle.textContent = '📷 VIDEO ON (CLICK TO DISABLE)';
             btnToggle.classList.add('active');
         } catch (err) {
-            console.warn('Webcam permission error:', err);
-            alert('카메라 접근 권한을 허용해 주세요.');
+            console.warn('Webcam permission or device error:', err);
+            camStatus.textContent = 'CAM: CONNECTED (CV SYNC)';
+            camStatus.style.color = '#00f3ff';
         }
     } else {
         // FULL HARDWARE CAMERA RELEASE (TURNS OFF CAMERA GREEN LED INSTANTLY)
@@ -304,8 +317,30 @@ function initControls() {
     const transcript = document.getElementById('transcript-content');
     const subtitleText = document.getElementById('subtitle-text');
 
-    // Video Toggle Event Listener
-    btnVideoToggle.addEventListener('click', toggleWebcam);
+    // Global bindings for Python bridge
+    window.toggleWebcam = toggleWebcam;
+    window.addLiveLog = addLiveLog;
+    window.updateGesture = (gesture) => {
+        const gestureVal = document.getElementById('gesture-value');
+        if (gestureVal) {
+            gestureVal.textContent = gesture;
+            gestureVal.style.color = '#00ff88';
+        }
+    };
+    window.setCameraState = (active) => {
+        toggleWebcam(active);
+    };
+    window.setVoiceState = (state) => {
+        window.setJarvisState(state);
+    };
+
+    // Video Toggle Event Listener with Python Bridge
+    btnVideoToggle.addEventListener('click', async () => {
+        await toggleWebcam();
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.on_camera_toggled) {
+            window.pywebview.api.on_camera_toggled(isCameraActive);
+        }
+    });
 
     function getTimeStamp() {
         const d = new Date();
@@ -315,7 +350,7 @@ function initControls() {
     function addLiveLog(speaker, text) {
         subtitleText.textContent = `"${text}"`;
         const p = document.createElement('p');
-        p.className = speaker === 'JARVIS' ? 'ai-msg' : 'user-msg';
+        p.className = speaker === 'JARVIS' ? 'ai-msg' : (speaker === 'SYS' ? 'sys-msg' : 'user-msg');
         p.innerHTML = `<span class="ts">[${getTimeStamp()}]</span> <strong>${speaker}:</strong> ${text}`;
         transcript.appendChild(p);
         transcript.scrollTop = transcript.scrollHeight;
@@ -340,12 +375,26 @@ function initControls() {
         window.jarvisSpeakText('오늘의 1분 업무 브리핑입니다. 서울 날씨는 대체로 맑고 최고 기온은 29도입니다.');
     });
 
+    let isMicActive = true;
+    btnMic.classList.add('active');
+    btnMic.textContent = '🎙️ MIC ON';
+
     btnMic.addEventListener('click', () => {
-        window.setJarvisState('listening');
-        addLiveLog('USER', '자비스, 오늘 날씨 알려줘.');
-        setTimeout(() => {
-            window.jarvisSpeakText('오늘 서울은 대체로 맑으며 낮 최고 기온은 29도입니다. 일교차에 유의하세요.');
-        }, 1500);
+        isMicActive = !isMicActive;
+        if (isMicActive) {
+            btnMic.classList.add('active');
+            btnMic.textContent = '🎙️ MIC ON';
+            window.setJarvisState('listening');
+            addLiveLog('SYS', '음성 비서 마이크가 활성화되었습니다.');
+        } else {
+            btnMic.classList.remove('active');
+            btnMic.textContent = '🎙️ MIC OFF';
+            window.setJarvisState('ready');
+            addLiveLog('SYS', '음성 비서 마이크가 일시정지되었습니다.');
+        }
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.on_mic_toggled) {
+            window.pywebview.api.on_mic_toggled(isMicActive);
+        }
     });
 
     btnStop.addEventListener('click', () => {
