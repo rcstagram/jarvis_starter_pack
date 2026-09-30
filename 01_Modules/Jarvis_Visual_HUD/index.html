@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS HOLO-OS :: Visual Interactive AI Core</title>
+    <link rel="stylesheet" href="styles.css?v=3">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="hud-container">
+        <!-- Top Status Bar -->
+        <header class="hud-header">
+            <div class="header-left">
+                <span class="pulse-dot"></span>
+                <span class="title">HOLO-OS // JARVIS_MOD: v7.3</span>
+                <span class="badge">LIVE_TRANSCRIPT_ENABLED</span>
+            </div>
+            <div class="header-center">
+                <span class="system-time" id="system-time">00:00:00 UTC</span>
+            </div>
+            <div class="header-right">
+                <span>CORE TEMP: 38°C</span> | <span>AUDIO: NEURAL_VOICE</span> | <span id="camera-status" class="cam-off">CAM: PRIVACY MODE (OFF)</span>
+            </div>
+        </header>
+
+        <!-- Main HUD Grid -->
+        <main class="hud-main">
+            <!-- Left: Vision & Camera Feed Panel -->
+            <section class="hud-panel vision-panel">
+                <div class="panel-header">
+                    <h3>📷 LIVE VISION FEED</h3>
+                    <span class="fps-tag" id="fps-tag">PRIVACY MODE</span>
+                </div>
+                <div class="camera-wrapper">
+                    <video id="webcam-video" autoplay playsinline muted></video>
+                    <canvas id="vision-canvas"></canvas>
+                    
+                    <!-- Video Privacy Overlay when OFF -->
+                    <div class="video-privacy-overlay" id="video-privacy-overlay">
+                        <div class="privacy-icon">🔒</div>
+                        <div class="privacy-text">CAMERA OFF (PRIVACY MODE)</div>
+                        <div class="privacy-sub">Click 'VIDEO ON / OFF' button below to start camera</div>
+                    </div>
+
+                    <div class="reticle-overlay" id="reticle-overlay" style="display: none;">
+                        <div class="reticle-ring"></div>
+                        <div class="reticle-target"></div>
+                        <span class="reticle-label" id="reticle-label">TARGET: USER_DETECTED</span>
+                    </div>
+                </div>
+
+                <!-- Prominent Video ON/OFF Toggle Button -->
+                <div class="camera-controls">
+                    <button class="hud-btn video-toggle-btn" id="btn-toggle-video">📷 VIDEO ON / OFF (CLICK TO ENABLE)</button>
+                </div>
+
+                <div class="gesture-status-box">
+                    <div class="status-item">
+                        <span class="label">LAST GESTURE:</span>
+                        <span class="value" id="gesture-value">OFF</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">CAMERA STATE:</span>
+                        <span class="value" id="presence-value" style="color: #ff3366;">DISABLED (OFF)</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Center: Glowing 3D Particle AI Core -->
+            <section class="hud-panel core-panel">
+                <div class="core-header">
+                    <h2>JARVIS AI CORE</h2>
+                    <p id="core-state-label">[AI CORE: MULTI-COLOR HYPER-VIBRANT MODE]</p>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="core-canvas"></canvas>
+                </div>
+
+                <!-- Big Live Subtitle Banner Overlay -->
+                <div class="subtitle-banner" id="subtitle-banner">
+                    <span class="subtitle-tag">LIVE CAPTION</span>
+                    <p class="subtitle-text" id="subtitle-text">"안녕하세요! 자비스 실시간 음성 자막 시스템이 연결되었습니다."</p>
+                </div>
+
+                <div class="core-controls">
+                    <button class="hud-btn" id="btn-toggle-mic">🎙️ MIC TOGGLE</button>
+                    <button class="hud-btn" id="btn-trigger-briefing">✌️ 1-MIN BRIEFING</button>
+                    <button class="hud-btn danger" id="btn-stop-audio">🖐️ STOP AUDIO</button>
+                </div>
+            </section>
+
+            <!-- Right: Live Voice Transcript & Task HUD Panel -->
+            <section class="hud-panel task-panel">
+                <div class="panel-header">
+                    <h3>💬 LIVE TRANSCRIPT &amp; TASKS</h3>
+                    <span class="badge highlight">REALTIME SPEECH LOG</span>
+                </div>
+
+                <!-- Prominent Live Subtitle / Voice Log Box -->
+                <div class="transcript-box prominent">
+                    <div class="transcript-header">
+                        <span>🎙️ SPEECH &amp; RESPONSE TRANSCRIPT</span>
+                        <span class="live-dot">● REC</span>
+                    </div>
+                    <div class="transcript-content" id="transcript-content">
+                        <p class="ai-msg"><span class="ts">[SYS]</span> <strong>JARVIS:</strong> 안녕하세요. 답변과 음성 브리핑이 이곳에 실시간 텍스트로 기록됩니다.</p>
+                    </div>
+                </div>
+
+                <div class="task-cards-container">
+                    <div class="task-card">
+                        <div class="card-header">
+                            <span class="task-num">01</span>
+                            <span class="task-title">AILO-H Core Pipeline Review</span>
+                        </div>
+                        <p class="task-desc">Review identity layer and policy contract v1.3 compliance.</p>
+                        <div class="card-footer">
+                            <span class="due-tag">DUE: TODAY 16:00</span>
+                            <span class="status-pill done">DONE</span>
+                        </div>
+                    </div>
+
+                    <div class="task-card">
+                        <div class="card-header">
+                            <span class="task-num">02</span>
+                            <span class="task-title">Camera Privacy Control</span>
+                        </div>
+                        <p class="task-desc">Video ON/OFF toggle button integrated below camera feed.</p>
+                        <div class="card-footer">
+                            <span class="due-tag">DUE: ACTIVE</span>
+                            <span class="status-pill done">DONE</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Audio Spectrum Waveform Footer -->
+        <footer class="hud-footer">
+            <div class="footer-info">AUDIO INPUT / OUTPUT EQUALIZER</div>
+            <div class="spectrum-container">
+                <canvas id="spectrum-canvas"></canvas>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js?v=3"></script>
+</body>
+</html>
