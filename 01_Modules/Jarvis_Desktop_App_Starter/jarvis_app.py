@@ -75,15 +75,13 @@ class JarvisAppManager:
             self.safe_eval_js("if (window.setVoiceState) window.setVoiceState('ready');")
 
     def set_camera_state(self, active: bool):
-        """카메라 및 비전 엔진 ON/OFF 제어"""
+        """음성 명령 등에 의해 Python에서 카메라 상태를 변경할 때 (Python -> JS 동기화)"""
         self.camera_active = active
         js_bool = "true" if active else "false"
         self.safe_eval_js(f"if (window.setCameraState) window.setCameraState({js_bool});")
         
         if active:
             print("[Jarvis Manager] 📷 카메라 활성화 (Vision ON)")
-            if not self.vision_engine.cap or not self.vision_engine.cap.isOpened():
-                self.vision_engine.start_camera()
         else:
             print("[Jarvis Manager] 🔒 카메라 비활성화 (Vision OFF / Privacy Mode)")
             self.vision_engine.stop_camera()
@@ -241,7 +239,14 @@ class JarvisAPI:
         }
 
     def on_camera_toggled(self, active: bool):
-        self.manager.set_camera_state(active)
+        """UI 버튼 클릭에 의해 카메라 상태가 변경되었을 때 (JS -> Python 동기화)"""
+        print(f"[Jarvis UI] Camera toggled via UI button: {active}")
+        self.manager.camera_active = active
+        if active:
+            print("[Jarvis Manager] 📷 카메라 비전 엔진 활성화 (Vision ON)")
+        else:
+            print("[Jarvis Manager] 🔒 카메라 비전 엔진 비활성화 (Vision OFF / Privacy Mode)")
+            self.manager.vision_engine.stop_camera()
         return True
 
     def on_mic_toggled(self, active: bool):

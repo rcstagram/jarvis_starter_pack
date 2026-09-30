@@ -29,8 +29,11 @@ function initClock() {
     updateTime();
 }
 
+let isTogglingCamera = false;
+
 // 2. Complete Hardware Camera Release Toggle Controller
 async function toggleWebcam(forceState) {
+    if (isTogglingCamera) return;
     if (forceState !== undefined && forceState === isCameraActive) {
         return;
     }
@@ -44,33 +47,76 @@ async function toggleWebcam(forceState) {
     const presenceVal = document.getElementById('presence-value');
     const fpsTag = document.getElementById('fps-tag');
 
+    isTogglingCamera = true;
+
     if (shouldActivate) {
         // TURN CAMERA ON
         try {
-            webcamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
-            video.srcObject = webcamStream;
-            await video.play();
+            // Clean up any existing stream first
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} });
+                webcamStream = null;
+            }
+
+            try {
+                webcamStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+            } catch (strictErr) {
+                console.warn('Strict constraints failed, falling back to default video:', strictErr);
+                webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            }
+
+            if (video) {
+                video.srcObject = webcamStream;
+                video.muted = true;
+                video.play().catch(playErr => console.warn('video.play handled:', playErr));
+            }
+
             isCameraActive = true;
 
-            overlay.style.display = 'none';
-            reticle.style.display = 'block';
+            if (overlay) overlay.style.display = 'none';
+            if (reticle) reticle.style.display = 'block';
 
-            camStatus.textContent = 'CAM: ONLINE (30 FPS)';
-            camStatus.className = '';
-            camStatus.style.color = '#00ff88';
+            if (camStatus) {
+                camStatus.textContent = 'CAM: ONLINE (30 FPS)';
+                camStatus.className = '';
+                camStatus.style.color = '#00ff88';
+            }
 
-            fpsTag.textContent = '30 FPS';
-            fpsTag.style.color = '#00ff88';
+            if (fpsTag) {
+                fpsTag.textContent = '30 FPS';
+                fpsTag.style.color = '#00ff88';
+            }
 
-            presenceVal.textContent = 'USER_ARRIVED (ONLINE)';
-            presenceVal.style.color = '#00ff88';
+            if (presenceVal) {
+                presenceVal.textContent = 'USER_ARRIVED (ONLINE)';
+                presenceVal.style.color = '#00ff88';
+            }
 
-            btnToggle.textContent = '📷 VIDEO ON (CLICK TO DISABLE)';
-            btnToggle.classList.add('active');
+            if (btnToggle) {
+                btnToggle.textContent = '📷 VIDEO ON (CLICK TO DISABLE)';
+                btnToggle.classList.add('active');
+            }
         } catch (err) {
-            console.warn('Webcam permission or device error:', err);
-            camStatus.textContent = 'CAM: CONNECTED (CV SYNC)';
-            camStatus.style.color = '#00f3ff';
+            console.warn('Webcam activation error:', err);
+            isCameraActive = false;
+            if (overlay) overlay.style.display = 'flex';
+            if (reticle) reticle.style.display = 'none';
+            if (camStatus) {
+                camStatus.textContent = 'CAM: ERROR (' + (err.name || 'FAILED') + ')';
+                camStatus.style.color = '#ff3366';
+            }
+            if (btnToggle) {
+                btnToggle.textContent = '📷 VIDEO ON / OFF (CLICK TO ENABLE)';
+                btnToggle.classList.remove('active');
+            }
+            if (window.addLiveLog) {
+                window.addLiveLog('SYS', '카메라 켜기 실패: ' + (err.message || err.name));
+            }
+        } finally {
+            isTogglingCamera = false;
         }
     } else {
         // FULL HARDWARE CAMERA RELEASE (TURNS OFF CAMERA GREEN LED INSTANTLY)
@@ -78,39 +124,49 @@ async function toggleWebcam(forceState) {
             if (webcamStream) {
                 const tracks = webcamStream.getTracks();
                 tracks.forEach(track => {
-                    track.stop(); // Stop media hardware track
-                    webcamStream.removeTrack(track);
+                    try { track.stop(); } catch(e){}
                 });
                 webcamStream = null;
             }
-            if (video.srcObject) {
-                const srcTracks = video.srcObject.getTracks ? video.srcObject.getTracks() : [];
-                srcTracks.forEach(t => t.stop());
+            if (video) {
+                if (video.srcObject) {
+                    const srcTracks = video.srcObject.getTracks ? video.srcObject.getTracks() : [];
+                    srcTracks.forEach(t => { try { t.stop(); } catch(e){} });
+                }
+                video.pause();
+                video.srcObject = null;
+                // Note: video.load() intentionally omitted to avoid breaking WKWebView media element
             }
-            video.pause();
-            video.srcObject = null;
-            video.load();
         } catch (e) {
             console.error('Error releasing camera hardware:', e);
+        } finally {
+            isCameraActive = false;
+            isTogglingCamera = false;
         }
 
-        isCameraActive = false;
+        if (overlay) overlay.style.display = 'flex';
+        if (reticle) reticle.style.display = 'none';
 
-        overlay.style.display = 'flex';
-        reticle.style.display = 'none';
+        if (camStatus) {
+            camStatus.textContent = 'CAM: PRIVACY MODE (OFF)';
+            camStatus.className = 'cam-off';
+            camStatus.style.color = '#ff3366';
+        }
 
-        camStatus.textContent = 'CAM: PRIVACY MODE (OFF)';
-        camStatus.className = 'cam-off';
-        camStatus.style.color = '#ff3366';
+        if (fpsTag) {
+            fpsTag.textContent = 'PRIVACY MODE';
+            fpsTag.style.color = '#ff3366';
+        }
 
-        fpsTag.textContent = 'PRIVACY MODE';
-        fpsTag.style.color = '#ff3366';
+        if (presenceVal) {
+            presenceVal.textContent = 'DISABLED (OFF)';
+            presenceVal.style.color = '#ff3366';
+        }
 
-        presenceVal.textContent = 'DISABLED (OFF)';
-        presenceVal.style.color = '#ff3366';
-
-        btnToggle.textContent = '📷 VIDEO ON / OFF (CLICK TO ENABLE)';
-        btnToggle.classList.remove('active');
+        if (btnToggle) {
+            btnToggle.textContent = '📷 VIDEO ON / OFF (CLICK TO ENABLE)';
+            btnToggle.classList.remove('active');
+        }
     }
 }
 
