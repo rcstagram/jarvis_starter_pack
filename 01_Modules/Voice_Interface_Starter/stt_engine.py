@@ -6,7 +6,12 @@ Converts microphone audio or audio files to Korean text.
 """
 
 import sys
+import os
 import argparse
+
+# Ensure homebrew paths are available for native arm64 flac
+if "/opt/homebrew/bin" not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + os.environ.get("PATH", "")
 
 def listen_microphone(language: str = "ko-KR", timeout: int = 5) -> str:
     """마이크를 통해 음성 수신 후 텍스트 변환"""

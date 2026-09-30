@@ -28,9 +28,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "[2/4] 🍏 macOS 환경 감지. 마이크 음성 라이브러리(portaudio) 점검..."
     if command -v brew &> /dev/null; then
         brew list portaudio &> /dev/null || brew install portaudio
-        echo "       ✅ portaudio 라이브러리 준비 완료."
+        brew list flac &> /dev/null || brew install flac
+        echo "       ✅ portaudio 및 flac 오디오 라이브러리 준비 완료."
     else
-        echo "       [WARN] Homebrew가 설치되어 있지 않습니다. pyaudio 수동 설치가 필요할 수 있습니다."
+        echo "       [WARN] Homebrew가 설치되어 있지 않습니다. pyaudio 및 flac 수동 설치가 필요할 수 있습니다."
     fi
 else
     echo "[2/4] 🐧 Linux/Unix 환경 감지."
